@@ -38,14 +38,57 @@ export interface Lead {
 }
 
 const NICHES = [
-  'High-End Dental Practices',
-  'Boutique Gyms & Crossfit',
-  'Luxury Interior Designers',
-  'Roofing & HVAC Contractors',
+  'Barber Shops & Men Grooming',
+  'Fine Dining & Local Restaurants',
+  'Real Estate Agencies & Realtors',
   'MedSpas & Aesthetic Clinics',
+  'High-End Auto Detailing',
+  'Roofing & HVAC Contractors',
+  'Luxury Kitchen & Bath Remodelers',
+  'Personal Injury Law Firms',
+  'Cosmetic Dentists',
+  'Boutique Gyms & CrossFit',
+  'Luxury Interior Designers',
+  'Custom Home Builders',
+  'Chiropractors & Physical Therapies',
+  'Plastic Surgery Clinics',
+  'Epoxy Flooring Installers',
+  'Private Wealth & Financial Advisors'
 ];
 
-const MARKETS = ['Austin, TX', 'Miami, FL', 'Los Angeles, CA', 'Scottsdale, AZ', 'London, UK'];
+const MARKETS = [
+  // Nigeria & Africa
+  'Lagos, Nigeria',
+  'Abuja, Nigeria',
+  'Port Harcourt, Nigeria',
+  'Ibadan, Nigeria',
+  'Johannesburg, South Africa',
+  'Cape Town, South Africa',
+  'Nairobi, Kenya',
+  
+  // Europe
+  'London, UK',
+  'Manchester, UK',
+  'Berlin, Germany',
+  'Paris, France',
+  'Amsterdam, Netherlands',
+  'Dublin, Ireland',
+  'Madrid, Spain',
+  'Milan, Italy',
+
+  // Australia
+  'Sydney, Australia',
+  'Melbourne, Australia',
+  'Brisbane, Australia',
+  'Perth, Australia',
+
+  // US & Canada
+  'Austin, TX',
+  'Miami, FL',
+  'Scottsdale, AZ',
+  'New York, NY',
+  'Toronto, ON'
+];
 
 const STORAGE_KEY = 'leadforge_leads';
 
@@ -283,14 +326,21 @@ export default function App() {
                     ))}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label>Quantity</label>
-                  <select value={prospectCount} onChange={(e) => setProspectCount(Number(e.target.value))}>
-                    <option value={1}>1 Prospect</option>
-                    <option value={3}>3 Prospects</option>
-                    <option value={5}>5 Prospects</option>
-                  </select>
-                </div>
+                <div>
+  <label className="block text-xs font-semibold text-slate-400 mb-1">Quantity</label>
+  <select
+    value={prospectCount}
+    onChange={(e) => setProspectCount(Number(e.target.value))}
+    className="w-full bg-slate-950 border border-slate-800 text-slate-200 p-2.5 rounded-lg text-sm focus:border-indigo-500 outline-none"
+  >
+    <option value={1}>1 Prospect</option>
+    <option value={3}>3 Prospects</option>
+    <option value={5}>5 Prospects</option>
+    <option value={10}>10 Prospects</option>
+    <option value={15}>15 Prospects</option>
+    <option value={20}>20 Prospects</option>
+  </select>
+</div>
                 <button className="btn" onClick={handleGenerateProspects} disabled={isGenerating}>
                   {isGenerating ? 'Scanning Instagram...' : 'Discover Prospects'}
                   <ArrowRight size={16} />
