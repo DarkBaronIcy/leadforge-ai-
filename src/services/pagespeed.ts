@@ -1,4 +1,4 @@
-const PAGESPEED_API_KEY = import.meta.env.VITE_PAGESPEED_API_KEY || 'AIzaSyDgMxp9NtYRMsrw_EbYyWQBi3JOdddzoV0';
+const PAGESPEED_API_KEY = import.meta.env.VITE_PAGESPEED_API_KEY || 'YOUR_GOOGLE_API_KEY';
 
 export interface AuditResult {
   performanceScore: number;
