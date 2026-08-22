@@ -16,6 +16,7 @@ import {
   Sparkles,
   ArrowRight,
 } from 'lucide-react';
+import { fetchRealProspects } from './services/apify';
 
 export type PipelineStatus = 'New' | 'Qualified' | 'Contacted' | 'Interested' | 'Closed' | 'Lost';
 
@@ -26,7 +27,7 @@ export interface Lead {
   niche: string;
   market: string;
   followers: number;
-  websiteStatus: 'Missing' | 'Outdated' | 'Slow / Not Mobile Friendly' | 'Decent';
+  websiteStatus: 'Missing' | 'Outdated' | 'Slow / Not Mobile Friendly' | 'Decent' | string;
   opportunityScore: number;
   explanation: string;
   opportunity: string;
@@ -53,7 +54,7 @@ const NICHES = [
   'Chiropractors & Physical Therapies',
   'Plastic Surgery Clinics',
   'Epoxy Flooring Installers',
-  'Private Wealth & Financial Advisors'
+  'Private Wealth & Financial Advisors',
 ];
 
 const MARKETS = [
@@ -65,7 +66,7 @@ const MARKETS = [
   'Johannesburg, South Africa',
   'Cape Town, South Africa',
   'Nairobi, Kenya',
-  
+
   // Europe
   'London, UK',
   'Manchester, UK',
@@ -87,7 +88,7 @@ const MARKETS = [
   'Miami, FL',
   'Scottsdale, AZ',
   'New York, NY',
-  'Toronto, ON'
+  'Toronto, ON',
 ];
 
 const STORAGE_KEY = 'leadforge_leads';
@@ -122,12 +123,12 @@ const INITIAL_LEADS: Lead[] = [
     websiteStatus: 'Missing',
     opportunityScore: 96,
     explanation:
-      'Rapidly growing crossfit community with zero dedicated domain or landing page. Linktree only points to a PDF schedule.',
+      "Rapidly growing crossfit community with zero dedicated domain or landing page. Linktree only points to a PDF schedule.",
     opportunity: 'Full brand strategy + membership portal website to directly capture free trial signups.',
     recommendedOffer: 'Gym Member Acquisition Site + Lead Magnet Integration',
     estimatedValue: 3500,
     outreachMessage:
-      'Hey guys! Massive respect on the 8.9k Miami lifting community you built. Noticed you don\u2019t have an official site yet and rely on Linktree PDFs. We could easily automate 15-20 free trial passes a week with a dedicated landing page. Mind if I send a 2-min video idea?',
+      "Hey guys! Massive respect on the 8.9k Miami lifting community you built. Noticed you don't have an official site yet and rely on Linktree PDFs. We could easily automate 15-20 free trial passes a week with a dedicated landing page. Mind if I send a 2-min video idea?",
     status: 'New',
     createdAt: new Date().toISOString(),
   },
@@ -168,6 +169,7 @@ export default function App() {
   const [selectedMarket, setSelectedMarket] = useState(MARKETS[0]);
   const [prospectCount, setProspectCount] = useState<number>(3);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
@@ -177,39 +179,28 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
   }, [leads]);
 
-  const handleGenerateProspects = () => {
+  const handleGenerateProspects = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      const suffixes = ['Hub', 'Studio', 'Co', 'Lab', 'Collective'];
-      const webStatuses: Lead['websiteStatus'][] = ['Missing', 'Outdated', 'Slow / Not Mobile Friendly'];
-      const generated: Lead[] = Array.from({ length: prospectCount }).map((_, i) => {
-        const id = `lead-${Date.now()}-${i}`;
-        const companyName = `${selectedNiche.split(' ')[0]} ${suffixes[Math.floor(Math.random() * suffixes.length)]}`;
-        const handle = `@${companyName.toLowerCase().replace(/\s+/g, '')}_${selectedMarket.split(',')[0].toLowerCase()}`;
-        const followers = Math.floor(Math.random() * 25000) + 1200;
-        const webStatus = webStatuses[Math.floor(Math.random() * webStatuses.length)];
-        const score = Math.floor(Math.random() * 25) + 75;
-        return {
-          id,
-          businessName: companyName,
-          instagramHandle: handle,
-          niche: selectedNiche,
-          market: selectedMarket,
-          followers,
-          websiteStatus: webStatus,
-          opportunityScore: score,
-          explanation: `High social activity (${(followers / 1000).toFixed(1)}k followers) combined with a ${webStatus.toLowerCase()} web presence that restricts conversion efficiency.`,
-          opportunity: `Modern web re-architecture focused on speed, clear CTA, and frictionless lead conversion.`,
-          recommendedOffer: `Complete ${selectedNiche} Growth & Web Package`,
-          estimatedValue: Math.floor(Math.random() * 3000) + 3000,
-          outreachMessage: `Hey ${companyName} team! Love your work in ${selectedMarket}. I noticed your current web presence has a few bottleneck points on mobile devices that might be costing you client bookings. I put together a quick mockup showing how to fix it — would you be open to checking it out?`,
-          status: 'New',
-          createdAt: new Date().toISOString(),
-        };
-      });
-      setLeads((prev) => [...generated, ...prev]);
+    setGenerationError(null);
+
+    try {
+      const generated = await fetchRealProspects(selectedNiche, selectedMarket, prospectCount);
+
+      if (!generated || generated.length === 0) {
+        setGenerationError(
+          'No prospects found for that niche/market. Try a different combination, or double-check your Apify token.'
+        );
+      } else {
+        setLeads((prev) => [...generated, ...prev]);
+      }
+    } catch (error) {
+      console.error('Prospect generation failed:', error);
+      setGenerationError(
+        error instanceof Error ? error.message : 'Something went wrong generating prospects. Check the console for details.'
+      );
+    } finally {
       setIsGenerating(false);
-    }, 1200);
+    }
   };
 
   const updateLeadStatus = (id: string, newStatus: PipelineStatus) => {
@@ -326,26 +317,27 @@ export default function App() {
                     ))}
                   </select>
                 </div>
-                <div>
-  <label className="block text-xs font-semibold text-slate-400 mb-1">Quantity</label>
-  <select
-    value={prospectCount}
-    onChange={(e) => setProspectCount(Number(e.target.value))}
-    className="w-full bg-slate-950 border border-slate-800 text-slate-200 p-2.5 rounded-lg text-sm focus:border-indigo-500 outline-none"
-  >
-    <option value={1}>1 Prospect</option>
-    <option value={3}>3 Prospects</option>
-    <option value={5}>5 Prospects</option>
-    <option value={10}>10 Prospects</option>
-    <option value={15}>15 Prospects</option>
-    <option value={20}>20 Prospects</option>
-  </select>
-</div>
+                <div className="form-group">
+                  <label>Quantity</label>
+                  <select value={prospectCount} onChange={(e) => setProspectCount(Number(e.target.value))}>
+                    <option value={1}>1 Prospect</option>
+                    <option value={3}>3 Prospects</option>
+                    <option value={5}>5 Prospects</option>
+                    <option value={10}>10 Prospects</option>
+                    <option value={15}>15 Prospects</option>
+                    <option value={20}>20 Prospects</option>
+                  </select>
+                </div>
                 <button className="btn" onClick={handleGenerateProspects} disabled={isGenerating}>
                   {isGenerating ? 'Scanning Instagram...' : 'Discover Prospects'}
                   <ArrowRight size={16} />
                 </button>
               </div>
+              {generationError && (
+                <p style={{ color: 'var(--accent-warning, #f59e0b)', fontSize: '0.85rem', marginTop: '0.75rem' }}>
+                  {generationError}
+                </p>
+              )}
             </div>
 
             <div className="grid-4">
