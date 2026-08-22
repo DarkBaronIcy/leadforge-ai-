@@ -16,7 +16,7 @@ import {
   Sparkles,
   ArrowRight,
 } from 'lucide-react';
-import { fetchRealProspects } from './src/services/apify';
+import { fetchRealProspects } from './services/apify';
 
 export type PipelineStatus = 'New' | 'Qualified' | 'Contacted' | 'Interested' | 'Closed' | 'Lost';
 
